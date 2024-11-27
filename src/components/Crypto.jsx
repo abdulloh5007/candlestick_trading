@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { createChart } from 'lightweight-charts';
+import { getUser, getUsername } from '../helper/helper';
 
 function Crypto() {
     const [price, setPrice] = useState(100);
@@ -148,17 +149,38 @@ function Crypto() {
         setPrice((prevPrice) => Math.max(0, prevPrice + event.effect));
     };
 
+    const [userName, setUsername] = useState('')
+    const [data, setData] = useState([])
+
+    useEffect(() => {
+        getUsername()
+            .then(user => setUsername(user.username))
+            .catch(error => console.error(error))
+
+        getUser({ username: userName })
+            .then(user => setData(user.data))
+            .catch(error => console.error(error));
+    }, [userName])
+
+    if (data == null) return <div className='p-4'>
+        <div className="mb-4 bg-gray-900 rounded-lg p-4">
+            <div ref={chartContainerRef}></div>
+        </div>
+        <div className="space-y-4">
+            <h1 className="text-xl font-bold mt-1">Цена: ${price.toFixed(2)}</h1>
+        </div>
+    </div>
+
     return (
         <div className="p-4">
             <div className="mb-4 bg-gray-900 rounded-lg p-4">
                 <div ref={chartContainerRef}></div>
             </div>
-
             <div className="space-y-4">
-                <h1 className="text-xl font-bold">Цена: ${price.toFixed(2)}</h1>
+                <h1 className="text-xl font-bold mt-1">Цена: ${price.toFixed(2)}</h1>
                 <div className="space-x-4">
-                    <span className="font-bold">Криптовалюта: {cryptoBalance.toFixed(1)}</span>
-                    <span className="font-bold">Баланс: ${balance.toFixed(2)}</span>
+                    <span className="font-bold">Криптовалюта: {data.cryptoBalance?.toFixed(1)}</span>
+                    <span className="font-bold">Баланс: ${data.balance?.toFixed(2)}</span>
                 </div>
                 <div className="space-x-2">
                     <input

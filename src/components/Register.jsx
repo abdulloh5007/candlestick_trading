@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import avatar from '../assets/profile.png';
 import toast, { Toaster } from 'react-hot-toast';
 import { useFormik } from 'formik';
@@ -29,7 +29,7 @@ export default function Register() {
                 success: <b>Register Successfully...!</b>,
                 error: <b>Could not Register.</b>
             });
-
+            
             registerPromise.then(function () { navigate('/') });
         }
     })
@@ -72,7 +72,7 @@ export default function Register() {
                         </div>
 
                         <div className="text-center py-4">
-                            <span className='text-gray-500'>Already Register? <a className='text-red-500' to="/">Login Now</a></span>
+                            <Link className='text-gray-500'>Already Register? <span className='text-red-500' to="/login">Login Now</span></Link>
                         </div>
 
                     </form>

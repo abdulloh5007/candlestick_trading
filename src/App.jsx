@@ -21,7 +21,7 @@ function App() {
         <Route path='/profile' element={<AuthorizeUser><Profile /></AuthorizeUser>}/>
         <Route path='/password' element={<ProtectRoute><Password /></ProtectRoute>}/>
         <Route path='/recovery' element={<Recovery />}/>
-        <Route path='/username' element={<Username />}/>
+        <Route path='/login' element={<Username />}/>
         <Route path='/reset' element={<Reset />}/>
       </Routes>
     </>

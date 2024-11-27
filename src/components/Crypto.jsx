@@ -114,7 +114,7 @@ function Crypto() {
                         seriesRef.current.setData([initialCandle]);
                     }
 
-                    fetch('http://localhost:8081/api/candles', {
+                    fetch('https://cs3gg4-8081.csb.app/api/candles', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(initialCandle),
@@ -139,7 +139,7 @@ function Crypto() {
                         seriesRef.current.setData(newCandles);
                     }
 
-                    fetch('http://localhost:8081/api/candles', {
+                    fetch('https://cs3gg4-8081.csb.app/api/candles', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(newCandle),
@@ -159,7 +159,7 @@ function Crypto() {
                     seriesRef.current.setData(updatedCandles);
                 }
 
-                fetch('http://localhost:8081/api/candles', {
+                fetch('https://cs3gg4-8081.csb.app/api/candles', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(updatedCandle),
@@ -168,7 +168,7 @@ function Crypto() {
                 return updatedCandles;
             });
 
-            fetch('http://localhost:8081/api/price', {
+            fetch('https://cs3gg4-8081.csb.app/api/price', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ price: priceRef.current }),

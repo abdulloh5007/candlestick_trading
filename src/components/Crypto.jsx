@@ -149,18 +149,24 @@ function Crypto() {
         setPrice((prevPrice) => Math.max(0, prevPrice + event.effect));
     };
 
-    const [userName, setUsername] = useState('')
     const [data, setData] = useState([])
 
     useEffect(() => {
-        getUsername()
-            .then(user => setUsername(user.username))
-            .catch(error => console.error(error))
+        // Получаем username один раз
+        const fetchUsernameAndData = async () => {
+            try {
+                const usernameResponse = await getUsername();
 
-        getUser({ username: userName })
-            .then(user => setData(user.data))
-            .catch(error => console.error(error));
-    }, [userName])
+                const userResponse = await getUser({ username: usernameResponse.username });
+                setData(userResponse.data);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        fetchUsernameAndData();
+    }, []);
+
 
     if (data == null) return <div className='p-4'>
         <div className="mb-4 bg-gray-900 rounded-lg p-4">

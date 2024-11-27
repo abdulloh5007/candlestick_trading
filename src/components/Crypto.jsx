@@ -65,13 +65,13 @@ function Crypto() {
                     return;
                 }
 
+                // Удаляем дубликаты и сортируем по времени
                 const uniqueCandles = Array.from(
                     new Map(response.map(candle => [candle.time, candle])).values()
                 );
 
-                const sortedCandles = uniqueCandles.sort((a, b) => {
-                    return (a.time * 1000 + a.open) - (b.time * 1000 + b.open);
-                });
+                // Явно сортируем по времени в порядке возрастания
+                const sortedCandles = uniqueCandles.sort((a, b) => a.time - b.time);
 
                 const candleData = sortedCandles.map(candle => ({
                     time: candle.time,
@@ -114,7 +114,7 @@ function Crypto() {
                         seriesRef.current.setData([initialCandle]);
                     }
 
-                    fetch('https://cs3gg4-8081.csb.app/api/candles', {
+                    fetch('http://localhost:8081/api/candles', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(initialCandle),
@@ -139,7 +139,7 @@ function Crypto() {
                         seriesRef.current.setData(newCandles);
                     }
 
-                    fetch('https://cs3gg4-8081.csb.app/api/candles', {
+                    fetch('http://localhost:8081/api/candles', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(newCandle),
@@ -159,7 +159,7 @@ function Crypto() {
                     seriesRef.current.setData(updatedCandles);
                 }
 
-                fetch('https://cs3gg4-8081.csb.app/api/candles', {
+                fetch('http://localhost:8081/api/candles', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(updatedCandle),
@@ -168,7 +168,7 @@ function Crypto() {
                 return updatedCandles;
             });
 
-            fetch('https://cs3gg4-8081.csb.app/api/price', {
+            fetch('http://localhost:8081/api/price', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ price: priceRef.current }),

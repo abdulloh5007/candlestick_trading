@@ -1,9 +1,8 @@
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 
-axios.defaults.baseURL = 'http://localhost:8080/';
-const host = 'https://cs3gg4-8080.csb.app'
-const host2 = 'https://cs3gg4-8080.csb.app'
+const host = 'http://localhost:8081'
+const host2 = 'http://localhost:8080'
 
 /** Make API Requests */
 

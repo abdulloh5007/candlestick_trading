@@ -5,6 +5,34 @@ axios.defaults.baseURL = 'http://localhost:8080/';
 
 /** Make API Requests */
 
+export const getCandles = async () => {
+    try {
+        const response = await fetch('http://localhost:8081/api/candles');
+        if (!response.ok) {
+            throw new Error('Не удалось получить данные');
+        }
+        const data = await response.json();
+        return data; // Верните данные, чтобы использовать их в компоненте
+    } catch (error) {
+        console.error("Ошибка при получении данных с сервера:", error);
+        return []; // Возвращаем пустой массив в случае ошибки
+    }
+};
+
+export const getPrice = async () => {
+    try {
+        const response = await fetch('http://localhost:8081/api/price');
+        if (!response.ok) {
+            throw new Error('Не удалось получить данные');
+        }
+        const data = await response.json();
+        return data; // Верните данные, чтобы использовать их в компоненте
+    } catch (error) {
+        console.error("Ошибка при получении данных с сервера:", error);
+        return []; // Возвращаем пустой массив в случае ошибки
+    }
+};
+
 /** To get username from Token */
 export async function getUsername(){
     const token = localStorage.getItem('token')

@@ -1,22 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
 import { createChart } from 'lightweight-charts';
-import { getUser, getUsername } from '../helper/helper';
+import { getCandles, getPrice, getUser, getUsername } from '../helper/helper';
 import { Link } from 'react-router-dom';
 
 function Crypto() {
-    const [price, setPrice] = useState(100);
-    const [balance, setBalance] = useState(1000);
+    const priceRef = useRef(0);
+    const [, forceRender] = useState({});
     const [cryptoBalance, setCryptoBalance] = useState(0);
     const [amount, setAmount] = useState(0);
-    const [candles, setCandles] = useState([]);
+    const [, setCandles] = useState([]);
     const chartContainerRef = useRef(null);
     const chartRef = useRef(null);
+    const [balance, setBalance] = useState(1000);
     const seriesRef = useRef(null);
 
     // Инициализация графика
     useEffect(() => {
         const chart = createChart(chartContainerRef.current, {
-            width: 800,
             height: 400,
             layout: {
                 textColor: 'white',
@@ -37,84 +37,152 @@ function Crypto() {
         return () => chart.remove();
     }, []);
 
+    // Получение начальной цены
+    useEffect(() => {
+        const fetchInitialPrice = async () => {
+            try {
+                const priceResponse = await getPrice();
+                if (priceResponse && priceResponse.price) {
+                    priceRef.current = priceResponse.price;
+                    forceRender({});
+                }
+            } catch (error) {
+                console.error("Ошибка при получении начальной цены:", error);
+            }
+        };
+
+        fetchInitialPrice();
+    }, []);
+
     // Инициализация начальных свечей
     useEffect(() => {
-        const initialData = [];
-        const now = Date.now();
-        const basePrice = 100;
+        const fetchCandles = async () => {
+            try {
+                const response = await getCandles();
 
-        for (let i = 0; i < 30; i++) {
-            const time = now - (30 - i) * 5000;
-            const volatility = 5;
-            const open = basePrice + Math.random() * volatility * 2 - volatility;
-            const close = basePrice + Math.random() * volatility * 2 - volatility;
-            const high = Math.max(open, close) + Math.random() * volatility;
-            const low = Math.min(open, close) - Math.random() * volatility;
+                if (!response || !Array.isArray(response)) {
+                    console.error("Данные не получены или неправильный формат ответа", response);
+                    return;
+                }
 
-            initialData.push({
-                time: time / 1000, // Время в секундах
-                open,
-                high,
-                low,
-                close,
-            });
-        }
+                const uniqueCandles = Array.from(
+                    new Map(response.map(candle => [candle.time, candle])).values()
+                );
 
-        setCandles(initialData);
-        if (seriesRef.current) {
-            seriesRef.current.setData(initialData);
-        }
+                const sortedCandles = uniqueCandles.sort((a, b) => {
+                    return (a.time * 1000 + a.open) - (b.time * 1000 + b.open);
+                });
+
+                const candleData = sortedCandles.map(candle => ({
+                    time: candle.time,
+                    open: candle.open,
+                    high: candle.high,
+                    low: candle.low,
+                    close: candle.close,
+                }));
+
+                setCandles(candleData);
+                if (seriesRef.current) {
+                    seriesRef.current.setData(candleData);
+                }
+            } catch (error) {
+                console.error("Ошибка при получении данных для свечей:", error);
+            }
+        };
+
+        fetchCandles();
     }, []);
 
     // Обновление цены и свечей
     useEffect(() => {
         const updatePrice = () => {
-            setPrice((prevPrice) => {
-                const change = (Math.random() - .5) * 5;
-                return Math.max(0, Math.round((prevPrice + change) * 100) / 100);
-            });
+            const change = (Math.random() - 0.5) * 5;
+            priceRef.current = Math.max(0, Math.round((priceRef.current + change) * 100) / 100);
 
             setCandles((prevCandles) => {
+                if (prevCandles.length === 0) {
+                    const currentTime = Date.now();
+                    const initialCandle = {
+                        time: currentTime / 1000,
+                        open: priceRef.current,
+                        high: priceRef.current,
+                        low: priceRef.current,
+                        close: priceRef.current
+                    };
+
+                    if (seriesRef.current) {
+                        seriesRef.current.setData([initialCandle]);
+                    }
+
+                    fetch('http://localhost:8081/api/candles', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(initialCandle),
+                    }).catch((err) => console.error('Error updating candle:', err));
+
+                    return [initialCandle];
+                }
+
                 const currentTime = Date.now();
                 const lastCandle = prevCandles[prevCandles.length - 1];
 
-                // Если прошла минута, создаем новую свечу
                 if (currentTime - lastCandle.time * 1000 >= 5000) {
                     const newCandle = {
                         time: currentTime / 1000,
                         open: lastCandle.close,
-                        high: Math.max(lastCandle.close, price),
-                        low: Math.min(lastCandle.close, price),
-                        close: price,
+                        high: Math.max(lastCandle.close, priceRef.current),
+                        low: Math.min(lastCandle.close, priceRef.current),
+                        close: priceRef.current,
                     };
-                    const newCandles = [...prevCandles, newCandle]; // Не срезаем, просто добавляем
+                    const newCandles = [...prevCandles, newCandle];
                     if (seriesRef.current) {
-                        seriesRef.current.setData(newCandles); // Обновляем график с полными данными
+                        seriesRef.current.setData(newCandles);
                     }
+
+                    fetch('http://localhost:8081/api/candles', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newCandle),
+                    }).catch((err) => console.error('Error updating candle:', err));
+
                     return newCandles;
                 }
 
-                // Иначе обновляем текущую свечу
                 const updatedCandle = {
                     ...lastCandle,
-                    high: Math.max(lastCandle.high, price),
-                    low: Math.min(lastCandle.low, price),
-                    close: price,
+                    high: Math.max(lastCandle.high, priceRef.current),
+                    low: Math.min(lastCandle.low, priceRef.current),
+                    close: priceRef.current,
                 };
                 const updatedCandles = [...prevCandles.slice(0, -1), updatedCandle];
                 if (seriesRef.current) {
                     seriesRef.current.setData(updatedCandles);
                 }
+
+                fetch('http://localhost:8081/api/candles', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedCandle),
+                }).catch((err) => console.error('Error updating candle:', err));
+
                 return updatedCandles;
             });
+
+            fetch('http://localhost:8081/api/price', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ price: priceRef.current }),
+            }).catch((err) => console.error('Error updating price:', err));
+
+            forceRender({});
         };
 
         const interval = setInterval(updatePrice, 1000);
         return () => clearInterval(interval);
-    }, [price]);
+    }, []);
 
     const buyCrypto = () => {
-        if (balance < price * amount) {
+        if (balance < priceRef.current * amount) {
             alert('Недостаточно средств!');
             return;
         }
@@ -122,7 +190,7 @@ function Crypto() {
             alert('Количество не должно быть меньше 0.1');
             return;
         }
-        setBalance(balance - price * amount);
+        setBalance(balance - priceRef.current * amount);
         setCryptoBalance(Number(cryptoBalance) + Number(amount));
     };
 
@@ -135,7 +203,7 @@ function Crypto() {
             alert('Недостаточно криптовалюты для продажи!');
             return;
         }
-        setBalance(balance + price * amount);
+        setBalance(balance + priceRef.current * amount);
         setCryptoBalance(cryptoBalance - amount);
     };
 
@@ -147,17 +215,16 @@ function Crypto() {
         ];
         const event = events[Math.floor(Math.random() * events.length)];
         alert(event.name);
-        setPrice((prevPrice) => Math.max(0, prevPrice + event.effect));
+        priceRef.current = Math.max(0, priceRef.current + event.effect);
+        forceRender({});
     };
 
-    const [data, setData] = useState([])
+    const [data, setData] = useState([]);
 
     useEffect(() => {
-        // Получаем username один раз
         const fetchUsernameAndData = async () => {
             try {
                 const usernameResponse = await getUsername();
-
                 const userResponse = await getUser({ username: usernameResponse.username });
                 setData(userResponse.data);
             } catch (error) {
@@ -168,17 +235,18 @@ function Crypto() {
         fetchUsernameAndData();
     }, []);
 
-
-    if (data == null) return <div className='p-4'>
-        <div className="mb-4 bg-gray-900 rounded-lg p-4">
-            <div ref={chartContainerRef}></div>
+    if (data == null) return (
+        <div className='p-4'>
+            <div className="mb-4 bg-gray-900 rounded-lg p-4">
+                <div ref={chartContainerRef}></div>
+            </div>
+            <div className="space-y-4">
+                <h1 className="text-xl font-bold mt-1">Цена: ${priceRef.current.toFixed(2)}</h1>
+                <Link to='/login'>if you want trade Login</Link>
+                <Link to='/register'>or Signup</Link>
+            </div>
         </div>
-        <div className="space-y-4">
-            <h1 className="text-xl font-bold mt-1">Цена: ${price.toFixed(2)}</h1>
-            <Link to='/login'>if you want trade Login</Link>
-            <Link to='/register'>or Signup</Link>
-        </div>
-    </div>
+    );
 
     return (
         <div className="p-4">
@@ -186,7 +254,7 @@ function Crypto() {
                 <div ref={chartContainerRef}></div>
             </div>
             <div className="space-y-4">
-                <h1 className="text-xl font-bold mt-1">Цена: ${price.toFixed(2)}</h1>
+                <h1 className="text-xl font-bold mt-1">Цена: ${priceRef.current.toFixed(2)}</h1>
                 <div className="space-x-4">
                     <span className="font-bold">Криптовалюта: {data.cryptoBalance?.toFixed(1)}</span>
                     <span className="font-bold">Баланс: ${data.balance?.toFixed(2)}</span>
@@ -223,13 +291,19 @@ function Crypto() {
                                 </button>
                                 <button
                                     className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
-                                    onClick={() => setPrice((prev) => prev + 1)}
+                                    onClick={() => {
+                                        priceRef.current += 1;
+                                        forceRender({});
+                                    }}
                                 >
                                     Повысить цену
                                 </button>
                                 <button
                                     className='bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition'
-                                    onClick={() => setPrice((prev) => Math.max(0, prev - 1))}
+                                    onClick={() => {
+                                        priceRef.current = Math.max(0, priceRef.current - 1);
+                                        forceRender({});
+                                    }}
                                 >
                                     Понизить цену
                                 </button>

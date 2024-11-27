@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createChart } from 'lightweight-charts';
 import { getUser, getUsername } from '../helper/helper';
+import { Link } from 'react-router-dom';
 
 function Crypto() {
     const [price, setPrice] = useState(100);
@@ -174,6 +175,8 @@ function Crypto() {
         </div>
         <div className="space-y-4">
             <h1 className="text-xl font-bold mt-1">Цена: ${price.toFixed(2)}</h1>
+            <Link to='/login'>if you want trade Login</Link>
+            <Link to='/register'>or Signup</Link>
         </div>
     </div>
 
@@ -209,23 +212,31 @@ function Crypto() {
                     >
                         Продать
                     </button>
-                    <button
-                        onClick={randomEvent}
-                    >
-                        Случайное событие
-                    </button>
-                    <button
-                        className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
-                        onClick={() => setPrice((prev) => prev + 1)}
-                    >
-                        Повысить цену
-                    </button>
-                    <button
-                        className='bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition'
-                        onClick={() => setPrice((prev) => Math.max(0, prev - 1))}
-                    >
-                        Понизить цену
-                    </button>
+                    {
+                        data.username == 'abdulloh'
+                            ?
+                            <>
+                                <button
+                                    onClick={randomEvent}
+                                >
+                                    Случайное событие
+                                </button>
+                                <button
+                                    className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
+                                    onClick={() => setPrice((prev) => prev + 1)}
+                                >
+                                    Повысить цену
+                                </button>
+                                <button
+                                    className='bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition'
+                                    onClick={() => setPrice((prev) => Math.max(0, prev - 1))}
+                                >
+                                    Понизить цену
+                                </button>
+                            </>
+                            :
+                            <></>
+                    }
                 </div>
             </div>
         </div>

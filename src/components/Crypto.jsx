@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { createChart } from 'lightweight-charts';
-import { getCandles, getPrice, getUser, getUsername } from '../helper/helper';
+import { getCandles, getPrice, getUser, getUsername, updateCandle, updateServerPrice } from '../helper/helper';
 import { Link } from 'react-router-dom';
 
 function Crypto() {
@@ -114,11 +114,7 @@ function Crypto() {
                         seriesRef.current.setData([initialCandle]);
                     }
 
-                    fetch('http://localhost:8081/api/candles', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(initialCandle),
-                    }).catch((err) => console.error('Error updating candle:', err));
+                    updateCandle(initialCandle)
 
                     return [initialCandle];
                 }
@@ -139,11 +135,7 @@ function Crypto() {
                         seriesRef.current.setData(newCandles);
                     }
 
-                    fetch('http://localhost:8081/api/candles', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(newCandle),
-                    }).catch((err) => console.error('Error updating candle:', err));
+                    updateCandle(newCandles)
 
                     return newCandles;
                 }
@@ -159,20 +151,12 @@ function Crypto() {
                     seriesRef.current.setData(updatedCandles);
                 }
 
-                fetch('http://localhost:8081/api/candles', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updatedCandle),
-                }).catch((err) => console.error('Error updating candle:', err));
+                updateCandle(updatedCandles)
 
                 return updatedCandles;
             });
 
-            fetch('http://localhost:8081/api/price', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ price: priceRef.current }),
-            }).catch((err) => console.error('Error updating price:', err));
+            updateServerPrice(priceRef.current)
 
             forceRender({});
         };
@@ -181,8 +165,36 @@ function Crypto() {
         return () => clearInterval(interval);
     }, []);
 
+    const randomEvent = () => {
+        const events = [
+            { name: 'Новости: криптовалюта растет!', effect: 10 },
+            { name: 'Новости: рынок падает!', effect: -10 },
+            { name: 'Нет изменений.', effect: 0 },
+        ];
+        const event = events[Math.floor(Math.random() * events.length)];
+        alert(event.name);
+        priceRef.current = Math.max(0, priceRef.current + event.effect);
+        forceRender({});
+    };
+
+    const [data, setData] = useState([]);
+
+    useEffect(() => {
+        const fetchUsernameAndData = async () => {
+            try {
+                const usernameResponse = await getUsername();
+                const userResponse = await getUser({ username: usernameResponse.username });
+                setData(userResponse.data);               
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        fetchUsernameAndData();
+    }, []);
+
     const buyCrypto = () => {
-        if (balance < priceRef.current * amount) {
+        if (data.balance < priceRef.current * amount) {
             alert('Недостаточно средств!');
             return;
         }
@@ -207,35 +219,7 @@ function Crypto() {
         setCryptoBalance(cryptoBalance - amount);
     };
 
-    const randomEvent = () => {
-        const events = [
-            { name: 'Новости: криптовалюта растет!', effect: 10 },
-            { name: 'Новости: рынок падает!', effect: -10 },
-            { name: 'Нет изменений.', effect: 0 },
-        ];
-        const event = events[Math.floor(Math.random() * events.length)];
-        alert(event.name);
-        priceRef.current = Math.max(0, priceRef.current + event.effect);
-        forceRender({});
-    };
-
-    const [data, setData] = useState([]);
-
-    useEffect(() => {
-        const fetchUsernameAndData = async () => {
-            try {
-                const usernameResponse = await getUsername();
-                const userResponse = await getUser({ username: usernameResponse.username });
-                setData(userResponse.data);
-            } catch (error) {
-                console.error(error);
-            }
-        };
-
-        fetchUsernameAndData();
-    }, []);
-
-    if (data == null) return (
+    if (data == null || data.length == 0) return (
         <div className='p-4'>
             <div className="mb-4 bg-gray-900 rounded-lg p-4">
                 <div ref={chartContainerRef}></div>

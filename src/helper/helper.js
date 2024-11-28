@@ -41,8 +41,8 @@ export async function updateServerPrice(price) {
 
 export const getPrice = async () => {
     try {
-        const { data } = await axios.get(`${host}/api/price`);
-        return data; // Верните данные, чтобы использовать их в компоненте
+        const { data } = await axios.get(`${host}/api/price`);        
+        return data.price; // Верните данные, чтобы использовать их в компоненте
     } catch (error) {
         console.error("Ошибка при получении данных с сервера:", error);
         return []; // Возвращаем пустой массив в случае ошибки

@@ -227,7 +227,7 @@ function Crypto() {
             <div className="space-y-4">
                 <h1 className="text-xl font-bold mt-1">Цена: ${priceRef.current.toFixed(2)}</h1>
                 <Link to='/login'>if you want trade Login</Link>
-                <Link to='/register'>or Signup</Link>
+                <Link to='/register'> or Signup</Link>
             </div>
         </div>
     );
